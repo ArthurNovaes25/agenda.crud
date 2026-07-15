@@ -64,6 +64,12 @@ class Agenda {
   }
 
   void adicionar() {
+    print('Adicionando contato Empresarial ou Pessoal? (E/P)');
+    String tipo = stdin.readLineSync()?.toLowerCase() ?? '';
+    if (tipo != 'e' && tipo != 'p') {
+    print('Tipo inválido.');
+    return;
+  }
     String nome = lerNome();
 
     if (existe(nome)) {
@@ -73,8 +79,15 @@ class Agenda {
 
     String telefone = lerTelefone();
     String email = lerEmail();
-
-    _contatos.add(Contato(nome, telefone, email));
+  if (tipo == 'e') {
+    stdout.write('Empresa: ');
+    String empresa = stdin.readLineSync() ?? '';
+    _contatos.add(ContatoEmpresarial(nome, telefone, email, empresa));
+  } else if (tipo == 'p') {
+    stdout.write('Apelido: ');
+    String apelido = stdin.readLineSync() ?? '';
+    _contatos.add(ContatoPessoal(nome, telefone, email, apelido));
+  } 
     historico.add('Adicionou $nome');
 
     print('✓ Contato adicionado.');
@@ -87,9 +100,9 @@ class Agenda {
     }
 
     for (int i = 0; i < _contatos.length; i++) {
-      print(
-        '$i - ${_contatos[i].nome} | ${_contatos[i].telefone} | ${_contatos[i].email}',
-      );
+      print('$i - ID');
+     _contatos[i].imprimirContato();
+      print('---');
     }
   }
 
@@ -127,8 +140,15 @@ class Agenda {
     String novoTelefone = lerTelefone();
     String novoEmail = lerEmail();
 
-    _contatos[i] = Contato(novoNome.trim(), novoTelefone, novoEmail);
-
+  if (_contatos[i] is ContatoPessoal) {
+    stdout.write('Novo apelido: ');
+    String novoApelido = stdin.readLineSync() ?? '';
+    _contatos[i] = ContatoPessoal(novoNome.trim(), novoTelefone, novoEmail, novoApelido);
+  } else if (_contatos[i] is ContatoEmpresarial) {
+    stdout.write('Nova empresa: ');
+    String novaEmpresa = stdin.readLineSync() ?? '';
+    _contatos[i] = ContatoEmpresarial(novoNome.trim(), novoTelefone, novoEmail, novaEmpresa);
+  }
     historico.add('Editou $nomeAntigo');
 
     print('✓ Atualizado.');
@@ -173,11 +193,18 @@ class Agenda {
 
     for (int i = 0; i < _contatos.length; i++) {
       if (_contatos[i].nome.toLowerCase().contains(termo)) {
-        print(
-          '$i - ${_contatos[i].nome} | ${_contatos[i].telefone} | ${_contatos[i].email}',
-        );
+        stdout.write(
+          '$i - ${_contatos[i].nome} | ${_contatos[i].telefone} | ${_contatos[i].email} |',
+        
+        ); 
+        if (_contatos[i] is ContatoPessoal) {
+          print('Apelido: ${( _contatos[i] as ContatoPessoal).apelido ?? 'Não informado'}');
+        } else if (_contatos[i] is ContatoEmpresarial) {
+          print('Empresa: ${( _contatos[i] as ContatoEmpresarial).empresa ?? 'Não informada'}');
+        }
         achou = true;
       }
+    
     }
 
     if (!achou) {
@@ -224,9 +251,19 @@ class Agenda {
     List<String> linhas = [];
 
     for (int i = 0; i < _contatos.length; i++) {
-      linhas.add(
-        '${_contatos[i].nome};${_contatos[i].telefone};${_contatos[i].email}',
-      );
+      if (_contatos[i] is ContatoPessoal) {
+        linhas.add(
+          '${_contatos[i].nome};${_contatos[i].telefone};${_contatos[i].email};P;${(_contatos[i] as ContatoPessoal).apelido ?? ''}',
+        );
+      } else if (_contatos[i] is ContatoEmpresarial) {
+        linhas.add(
+          '${_contatos[i].nome};${_contatos[i].telefone};${_contatos[i].email};E;${(_contatos[i] as ContatoEmpresarial).empresa ?? ''}',
+        );
+      } else {
+        linhas.add(
+          '${_contatos[i].nome};${_contatos[i].telefone};${_contatos[i].email}',
+        );
+      }
     }
 
     File('agenda.txt').writeAsStringSync(linhas.join('\n'));
@@ -248,6 +285,12 @@ class Agenda {
 
       if (partes.length == 3) {
         _contatos.add(Contato(partes[0], partes[1], partes[2]));
+      } else if (partes.length == 5) {
+        if (partes[3] == 'P') {
+          _contatos.add(ContatoPessoal(partes[0], partes[1], partes[2], partes[4]));
+        } else if (partes[3] == 'E') {
+          _contatos.add(ContatoEmpresarial(partes[0], partes[1], partes[2], partes[4]));
+        }
       }
     }
   }
